@@ -27,8 +27,13 @@ export async function validateScan(payload, resolveHost = lookup) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(payload.scan_id || '')) throw new Error('Invalid scan ID.');
   const target = validateTarget(payload.target_url);
   const host = new URL(target).hostname.toLowerCase();
-  const addresses = await resolveHost(host, { all: true });
-  if (!addresses.length || addresses.some(a => privateAddress(a.address))) throw new Error('Only public IPv4 targets are supported.');
+  let addresses;
+  try {
+    addresses = await resolveHost(host, { all: true, family: 4 });
+  } catch (error) {
+    throw new Error('Cannot resolve a public IPv4 address for this target (' + (error.code || 'DNS error') + '). IPv6-only targets are not supported.');
+  }
+  if (!addresses.length || addresses.some(a => privateAddress(a.address))) throw new Error('Only public IPv4 targets are supported: the target has no IPv4 address or resolves to a private/local address.');
   return target;
 }
 async function main() {
@@ -37,7 +42,7 @@ async function main() {
   if (process.argv.includes('--validate')) return;
   const report = { schema_version: 1, profile: 'kev', scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
   try {
-    const result = spawnSync('nuclei', ['-profile', 'kev', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
+    const result = spawnSync('nuclei', ['-profile', 'kev', '-ip-version', '4', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
     if (result.error || result.status !== 0) throw new Error(`Nuclei failed or exceeded 20 minutes (exit ${result.status ?? 'unknown'}).`);
     if (!existsSync('results.json')) throw new Error('Nuclei produced no JSON output; scan completion cannot be verified.');
     const rows = JSON.parse(readFileSync('results.json', 'utf8'));

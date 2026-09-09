@@ -43,3 +43,6 @@ Scans now use ProjectDiscovery's recommended profile (nuclei -profile recommende
 
 The workflow now downloads the official Nuclei v3.11.1 Linux amd64 binary and verifies its SHA-256 against the release checksums before installation. No Go compilation is required. Templates are updated before each scan. The previous recommended-profile configuration above is superseded by -profile kev, targeting Nuclei templates tagged for CISA Known Exploited Vulnerabilities. Coverage is narrower and does not establish whether a particular website is currently being attacked. Existing severity filters, 10 requests/second, concurrency 5, progress every 15 seconds and 20-minute execution limit remain. Setup still requires downloads; there is no fixed completion-time guarantee. Official profile: https://github.com/projectdiscovery/nuclei-templates/blob/main/profiles/kev.yml.
 
+
+IPv4 validation now requests only DNS A records, matching Nuclei's explicit -ip-version 4. A site's additional IPv6 records no longer reject an otherwise valid public IPv4 target. Private/local IPv4 addresses remain blocked; IPv6-only or unresolvable targets receive a DNS-specific error.
+
