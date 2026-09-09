@@ -46,3 +46,8 @@ The workflow now downloads the official Nuclei v3.11.1 Linux amd64 binary and ve
 
 IPv4 validation now requests only DNS A records, matching Nuclei's explicit -ip-version 4. A site's additional IPv6 records no longer reject an otherwise valid public IPv4 target. Private/local IPv4 addresses remain blocked; IPv6-only or unresolvable targets receive a DNS-specific error.
 
+
+## KEV plus informational findings
+
+The current scan selects templates with the condition contains(tags, 'kev') OR severity == 'info', replacing the KEV-only profile. All five displayed severities are allowed. This adds informational observations such as service identification and missing headers without enabling every non-KEV vulnerability check. Info findings are not confirmed CVEs. Existing default template exclusions remain; more checks can increase runtime. Findings are prioritised by severity before the light report's 60-finding cap; full output remains in the raw artifact. Start a new scan to generate these findings; historical reports are unchanged.
+

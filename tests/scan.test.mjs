@@ -48,3 +48,13 @@ test('dual-stack hostname resolves IPv4 and preserves the hostname URL', async (
  assert.equal(result, target);
  await assert.rejects(validateScan(payload, async () => {throw Object.assign(new Error('DNS failed'),{code:'ENOTFOUND'});}), /Cannot resolve a public IPv4/);
 });
+
+test('retain informational observations without CVE IDs and prioritise critical findings', () => {
+ const rows=Array.from({length:65},()=>({info:{name:'TLS observation',severity:'info'}}));
+ rows.push({info:{name:'Critical finding',severity:'critical'}});
+ const findings=normalize(rows);
+ assert.equal(findings[0].severity,'critical');
+ assert.equal(findings[1].severity,'info');
+ assert.deepEqual(findings[1].cves,[]);
+ assert.equal(findings.length,60);
+});

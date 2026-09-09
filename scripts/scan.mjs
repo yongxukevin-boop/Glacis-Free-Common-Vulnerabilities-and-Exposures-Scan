@@ -8,7 +8,8 @@ export function normalize(rows) {
   if (!Array.isArray(rows)) throw new Error('Nuclei output must be a JSON array.');
   const clip = (v, length = 1600) => String(v ?? '').slice(0, length);
   const list = v => Array.isArray(v) ? v : v ? [v] : [];
-  const findings = rows.slice(0, 60).map(row => {
+  const ranked = [...rows].sort((a, b) => severities.indexOf(a?.info?.severity) - severities.indexOf(b?.info?.severity));
+  const findings = ranked.slice(0, 60).map(row => {
     if (!row || typeof row !== 'object' || !row.info) throw new Error('Malformed Nuclei finding.');
     const info = row.info;
     return { name: clip(info.name || row['template-id']), template_id: clip(row['template-id']), cves: list(info.classification?.['cve-id']).map(v => clip(v, 40)), severity: severities.includes(info.severity) ? info.severity : 'info', matched: clip(row['matched-at'] || row.url || row.host), description: clip(info.description), remediation: clip(info.remediation), extracted: list(row['extracted-results']).slice(0, 10).map(v => clip(v, 200)), request: clip(row.request, 2000), response: clip(row.response, 2000) };
@@ -40,9 +41,9 @@ async function main() {
   const payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).client_payload || {};
   const target = await validateScan(payload);
   if (process.argv.includes('--validate')) return;
-  const report = { schema_version: 1, profile: 'kev', scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
+  const report = { schema_version: 1, profile: 'kev-and-info', scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
   try {
-    const result = spawnSync('nuclei', ['-profile', 'kev', '-ip-version', '4', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
+    const result = spawnSync('nuclei', ['-template-condition', "contains(tags, 'kev') || severity == 'info'", '-ip-version', '4', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'info,low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
     if (result.error || result.status !== 0) throw new Error(`Nuclei failed or exceeded 20 minutes (exit ${result.status ?? 'unknown'}).`);
     if (!existsSync('results.json')) throw new Error('Nuclei produced no JSON output; scan completion cannot be verified.');
     const rows = JSON.parse(readFileSync('results.json', 'utf8'));
