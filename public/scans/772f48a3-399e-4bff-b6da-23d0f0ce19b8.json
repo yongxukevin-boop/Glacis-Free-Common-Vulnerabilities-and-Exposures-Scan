@@ -1,0 +1,1 @@
+{"schema_version":1,"profile":"recommended","scan_id":"772f48a3-399e-4bff-b6da-23d0f0ce19b8","run_id":"34412984510","target":"https://pentest-ground.com:4280/","finished_at":"2026-09-09T22:59:10.873Z","status":"failed","error":"Nuclei failed or exceeded 20 minutes (exit unknown).","findings":[],"truncated":false}
