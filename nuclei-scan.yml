@@ -1,0 +1,80 @@
+name: Nuclei scan
+run-name: Nuclei scan ${{ github.event.client_payload.scan_id }}
+on:
+  repository_dispatch:
+    types: [run-nuclei-scan]
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate target and scan identifier
+        env:
+          ALLOWED_SCAN_HOSTS: ${{ vars.ALLOWED_SCAN_HOSTS }}
+        run: node scripts/scan.mjs --validate
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+      - name: Install Nuclei and templates
+        run: |
+          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          "$(go env GOPATH)/bin/nuclei" -update-templates
+      - name: Scan and create light JSON payload
+        id: nuclei
+        env:
+          ALLOWED_SCAN_HOSTS: ${{ vars.ALLOWED_SCAN_HOSTS }}
+        run: node scripts/scan.mjs
+      - name: Save report for publication
+        if: ${{ always() && steps.nuclei.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-report
+          path: public/
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Save full raw output
+        if: ${{ always() && steps.nuclei.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-nuclei-results
+          path: results.json
+          if-no-files-found: ignore
+          retention-days: 3
+  publish:
+    needs: scan
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: scan-report
+          path: public/
+      - name: Commit results to default branch
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/
+          git commit -m 'Publish Nuclei scan report'
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase -X theirs origin "$DEFAULT_BRANCH"
+            if git push origin "HEAD:$DEFAULT_BRANCH"; then exit 0; fi
+            sleep $((attempt * 2))
+          done
+          exit 1
