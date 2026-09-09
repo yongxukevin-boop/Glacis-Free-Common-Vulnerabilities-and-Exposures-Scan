@@ -33,3 +33,8 @@ A valid empty JSON array is a no-match result. Missing/malformed output, failed 
 With Node.js 22 or newer: `node --test tests/scan.test.mjs` and `node --check docs/app.js`. Serve `docs/` using a local HTTP server to preview it. GitHub Actions execution and Pages deployment must be verified after pushing to your own repository; no live scan is performed by the tests.
 
 Official API reference: https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event
+
+## Recommended scan profile
+
+Scans now use ProjectDiscovery's recommended profile (nuclei -profile recommended), with progress statistics every 15 seconds in the Actions log. Reports record profile: recommended. Existing severity filters, rate limit (10 requests/second), concurrency (5), disabled redirects/Interactsh and the 20-minute scanner timeout remain. This narrows the template selection but does not guarantee completion within 15 minutes; installation and queue time are additional. Start a new dashboard scan after this update. See https://github.com/projectdiscovery/nuclei-templates/blob/main/profiles/recommended.yml.
+
