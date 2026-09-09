@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.github.com; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Glacis · CVE Scanner</title><link rel="stylesheet" href="styles.css">
+  <script src="app.js" type="module"></script>
+</head>
+<body><main>
+  <header><span class="eyebrow">GLACIS / SECURITY WORKSPACE</span><h1>Know your exposure.</h1><p>Run Nuclei from GitHub Actions. Investigate findings in one place.</p></header>
+  <section class="panel" aria-labelledby="scan-explained">
+    <h2 id="scan-explained">What does a URL CVE scan do?</h2>
+    <p><strong>A URL CVE scan is a digital safety check that looks at a web link (URL) for signs that the software running behind it has known security flaws. These flaws are catalogued as Common Vulnerabilities and Exposures (CVEs).</strong></p>
+    <p>When you start a scan, Nuclei sends test requests to the target website and compares its responses with vulnerability checks called templates. It can flag potential CVEs and other security issues, then group the findings by severity so you can decide what to investigate first.</p>
+    <p>The report shows affected endpoints, available evidence and remediation guidance when provided by the template. Findings need verification: the scan does not fix issues, and an empty report does not guarantee that a website is secure.</p>
+  </section>
+  <section class="panel"><h2>Start an assessment</h2>
+    <form id="scan-form">
+      <label>Target URL<input id="target" type="url" required placeholder="https://your-domain.com" maxlength="2048"></label>
+      <label>GitHub personal access token<input id="token" type="password" required autocomplete="off" spellcheck="false" placeholder="Token is kept in memory only"></label>
+      <p class="hint">Use a repository-specific token with Contents: read/write and Actions: read. Never use this page on an untrusted host.</p>
+      <label class="check"><input id="consent" type="checkbox" required>I am authorised to scan this target and publish findings, including HTTP snippets, to this repository.</label>
+      <div class="actions"><button id="start" type="submit">Start CVE Scan ↗</button><button id="latest" type="button" class="secondary">Load latest report</button></div>
+    </form>
+  </section>
+  <section class="status panel" aria-live="polite"><strong id="status">Ready to scan</strong><a id="run-link" hidden target="_blank" rel="noopener noreferrer">View GitHub Actions run ↗</a><p id="meta">Low, medium, high and critical templates · Rate limited to 10 requests/second</p></section>
+  <section aria-label="Findings"><div id="counts" class="counts"></div><div class="toolbar"><input id="search" type="search" aria-label="Search findings" placeholder="Search CVE, name or endpoint…"><select id="severity" aria-label="Severity"><option value="all">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option><option>info</option></select><button id="csv" class="secondary" disabled>Export CSV</button><button id="json" class="secondary" disabled>Export JSON</button></div><div id="findings"><p class="empty">Your scan findings will appear here.</p></div></section>
+  <footer>Nuclei findings require verification. No matches do not establish that a target is secure. Info findings are supported by the viewer but excluded by the default scan.</footer>
+</main></body></html>
