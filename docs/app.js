@@ -29,9 +29,9 @@ function setReport(data) {
 function node(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
 function filtered() { const query = $('search').value.toLowerCase(); return (report?.findings || []).filter(f => ($('severity').value === 'all' || f.severity === $('severity').value) && JSON.stringify(f).toLowerCase().includes(query)); }
 function render() {
-  $('counts').replaceChildren(...severities.map(s => { const e = node('div', undefined, `count ${s}`); e.append(node('span', s.toUpperCase()), node('strong', (report?.findings || []).filter(f => f.severity === s).length)); return e; }));
+  $('counts').replaceChildren(...severities.map(s => { const e = node('div', undefined, `count ${s}`); e.append(node('span', s.toUpperCase()), node('strong', report ? report.findings.filter(f => f.severity === s).length : '—')); return e; }));
   $('findings').replaceChildren();
-  if (!report) return;
+  if (!report) { $('findings').append(node('p', 'Start a scan or load a report to see findings grouped by severity.', 'empty')); return; }
   const matches = filtered();
   if (!matches.length) { $('findings').append(node('p', report.status !== 'completed' ? 'Scan failed or was incomplete. This is not a clean result.' : report.findings.length ? 'No findings match your filters.' : 'No vulnerabilities matched the selected templates. This is not a guarantee of security.', 'empty')); return; }
   for (const severity of severities) {
