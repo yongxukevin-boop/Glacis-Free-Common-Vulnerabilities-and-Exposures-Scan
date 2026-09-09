@@ -35,9 +35,9 @@ async function main() {
   const payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).client_payload || {};
   const target = await validateScan(payload);
   if (process.argv.includes('--validate')) return;
-  const report = { schema_version: 1, profile: 'recommended', scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
+  const report = { schema_version: 1, profile: 'kev', scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
   try {
-    const result = spawnSync('nuclei', ['-profile', 'recommended', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
+    const result = spawnSync('nuclei', ['-profile', 'kev', '-stats', '-stats-interval', '15', '-u', target, '-json-export', 'results.json', '-severity', 'low,medium,high,critical', '-rl', '10', '-c', '5', '-timeout', '10', '-retries', '1', '-dr', '-ni', '-duc'], { stdio: 'inherit', shell: false, timeout: 20 * 60 * 1000 });
     if (result.error || result.status !== 0) throw new Error(`Nuclei failed or exceeded 20 minutes (exit ${result.status ?? 'unknown'}).`);
     if (!existsSync('results.json')) throw new Error('Nuclei produced no JSON output; scan completion cannot be verified.');
     const rows = JSON.parse(readFileSync('results.json', 'utf8'));

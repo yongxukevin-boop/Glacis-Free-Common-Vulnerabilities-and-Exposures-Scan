@@ -23,7 +23,8 @@
       <div class="actions"><button id="start" type="submit">Start CVE Scan ↗</button><button id="latest" type="button" class="secondary">Load latest report</button></div>
     </form>
   </section>
-  <section class="status panel" aria-live="polite"><strong id="status">Ready to scan</strong><a id="run-link" hidden target="_blank" rel="noopener noreferrer">View GitHub Actions run ↗</a><p id="meta">Low, medium, high and critical templates · Rate limited to 10 requests/second</p></section>
+  <section class="status panel" aria-live="polite"><strong id="status">Ready to scan</strong><a id="run-link" hidden target="_blank" rel="noopener noreferrer">View GitHub Actions run ↗</a><p id="meta">Known Exploited Vulnerabilities (KEV) profile · Rate limited to 10 requests/second</p></section>
   <section aria-label="Findings"><div id="counts" class="counts"></div><div class="toolbar"><input id="search" type="search" aria-label="Search findings" placeholder="Search CVE, name or endpoint…"><select id="severity" aria-label="Severity"><option value="all">All severities</option><option>critical</option><option>high</option><option>medium</option><option>low</option><option>info</option></select><button id="csv" class="secondary" disabled>Export CSV</button><button id="json" class="secondary" disabled>Export JSON</button></div><div id="findings"><p class="empty">Your scan findings will appear here.</p></div></section>
   <footer>Nuclei findings require verification. No matches do not establish that a target is secure. Info findings are supported by the viewer but excluded by the default scan.</footer>
 </main></body></html>
+

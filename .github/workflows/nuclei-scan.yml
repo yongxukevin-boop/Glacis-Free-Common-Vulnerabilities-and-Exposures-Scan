@@ -17,22 +17,31 @@ jobs:
         with:
           node-version: '22'
       - name: Validate target and scan identifier
-        env:
-          ALLOWED_SCAN_HOSTS: ${{ vars.ALLOWED_SCAN_HOSTS }}
         run: node scripts/scan.mjs --validate
-      - uses: actions/setup-go@v5
-        with:
-          go-version: stable
-          cache: false
-      - name: Install Nuclei and templates
+      - name: Install verified prebuilt Nuclei
+        env:
+          NUCLEI_VERSION: '3.11.1'
         run: |
-          go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-          "$(go env GOPATH)/bin/nuclei" -update-templates
+          set -euo pipefail
+          archive="nuclei_${NUCLEI_VERSION}_linux_amd64.zip"
+          checksums="nuclei_${NUCLEI_VERSION}_checksums.txt"
+          base="https://github.com/projectdiscovery/nuclei/releases/download/v$NUCLEI_VERSION"
+          staging="$(mktemp -d)"
+          cd "$staging"
+          curl --fail --location --retry 3 --output "$archive" "$base/$archive"
+          curl --fail --location --retry 3 --output "$checksums" "$base/$checksums"
+          awk -v file="$archive" '$2 == file || $2 == "*" file { print }' "$checksums" > selected-checksum.txt
+          test "$(wc -l < selected-checksum.txt)" -eq 1
+          sha256sum --check selected-checksum.txt
+          unzip -q "$archive" nuclei
+          mkdir -p "$HOME/.local/bin"
+          install -m 0755 nuclei "$HOME/.local/bin/nuclei"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/nuclei" -version
+      - name: Update vulnerability templates
+        run: nuclei -update-templates
       - name: Scan and create light JSON payload
         id: nuclei
-        env:
-          ALLOWED_SCAN_HOSTS: ${{ vars.ALLOWED_SCAN_HOSTS }}
         run: node scripts/scan.mjs
       - name: Save report for publication
         if: ${{ always() && steps.nuclei.outcome != 'skipped' }}
@@ -78,3 +87,4 @@ jobs:
             sleep $((attempt * 2))
           done
           exit 1
+

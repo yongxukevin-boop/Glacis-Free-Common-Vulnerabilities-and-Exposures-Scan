@@ -38,3 +38,8 @@ Official API reference: https://docs.github.com/en/rest/repos/repos#create-a-rep
 
 Scans now use ProjectDiscovery's recommended profile (nuclei -profile recommended), with progress statistics every 15 seconds in the Actions log. Reports record profile: recommended. Existing severity filters, rate limit (10 requests/second), concurrency (5), disabled redirects/Interactsh and the 20-minute scanner timeout remain. This narrows the template selection but does not guarantee completion within 15 minutes; installation and queue time are additional. Start a new dashboard scan after this update. See https://github.com/projectdiscovery/nuclei-templates/blob/main/profiles/recommended.yml.
 
+
+## Current scan configuration: prebuilt binary and KEV
+
+The workflow now downloads the official Nuclei v3.11.1 Linux amd64 binary and verifies its SHA-256 against the release checksums before installation. No Go compilation is required. Templates are updated before each scan. The previous recommended-profile configuration above is superseded by -profile kev, targeting Nuclei templates tagged for CISA Known Exploited Vulnerabilities. Coverage is narrower and does not establish whether a particular website is currently being attacked. Existing severity filters, 10 requests/second, concurrency 5, progress every 15 seconds and 20-minute execution limit remain. Setup still requires downloads; there is no fixed completion-time guarantee. Official profile: https://github.com/projectdiscovery/nuclei-templates/blob/main/profiles/kev.yml.
+
