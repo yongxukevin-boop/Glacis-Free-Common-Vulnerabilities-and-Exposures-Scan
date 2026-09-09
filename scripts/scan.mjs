@@ -23,19 +23,17 @@ export function privateAddress(address) {
   const [a, b] = address.split('.').map(Number);
   return a === 0 || a === 10 || a === 127 || a >= 224 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || (a === 198 && [18, 19].includes(b));
 }
-export async function validateScan(payload, allowedHosts) {
+export async function validateScan(payload, resolveHost = lookup) {
   if (!/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(payload.scan_id || '')) throw new Error('Invalid scan ID.');
   const target = validateTarget(payload.target_url);
   const host = new URL(target).hostname.toLowerCase();
-  const allowed = (allowedHosts || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-  if (!allowed.includes(host)) throw new Error('Target hostname is not in the repository ALLOWED_SCAN_HOSTS variable.');
-  const addresses = await lookup(host, { all: true });
+  const addresses = await resolveHost(host, { all: true });
   if (!addresses.length || addresses.some(a => privateAddress(a.address))) throw new Error('Only public IPv4 targets are supported.');
   return target;
 }
 async function main() {
   const payload = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).client_payload || {};
-  const target = await validateScan(payload, process.env.ALLOWED_SCAN_HOSTS);
+  const target = await validateScan(payload);
   if (process.argv.includes('--validate')) return;
   const report = { schema_version: 1, scan_id: payload.scan_id, run_id: process.env.GITHUB_RUN_ID, target, finished_at: null, status: 'failed', error: null, findings: [], truncated: false };
   try {
